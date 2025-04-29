@@ -13,23 +13,21 @@ export default function HorizontalScrollWrapper({ children }: HorizontalScrollWr
   useEffect(() => {
     const container = containerRef.current;
     const aboutSection = aboutRef.current;
-  
+
     if (!container || !aboutSection) return;
-  
+
     let startY = 0;
-    let isAtTopOfAbout = false;
-  
+
     const handleTouchStart = (e: TouchEvent) => {
       startY = e.touches[0].clientY;
-      isAtTopOfAbout = aboutSection.scrollTop <= 0;
     };
-  
+
     const handleTouchMove = (e: TouchEvent) => {
       const currentY = e.touches[0].clientY;
       const deltaY = currentY - startY;
-  
+
       const atAboutSection = Math.abs(container.scrollLeft + container.clientWidth - container.scrollWidth) < 5;
-  
+
       if (!atAboutSection) {
         e.preventDefault();
         container.scrollBy({
@@ -38,7 +36,8 @@ export default function HorizontalScrollWrapper({ children }: HorizontalScrollWr
         });
         startY = currentY;
       } else {
-        if (deltaY > 30 && isAtTopOfAbout) {
+        if (deltaY < -30 && aboutSection.scrollTop <= 0) {
+          // Prevent scrolling up if at the top of About section
           e.preventDefault();
           container.scrollBy({
             left: -container.clientWidth,
@@ -47,11 +46,10 @@ export default function HorizontalScrollWrapper({ children }: HorizontalScrollWr
         }
       }
     };
-  
+
     const handleWheel = (e: WheelEvent) => {
       const atAboutSection = Math.abs(container.scrollLeft + container.clientWidth - container.scrollWidth) < 5;
-      const isAtTopOfAbout = aboutSection.scrollTop <= 0;
-    
+
       if (!atAboutSection) {
         // Home page: Always scroll horizontally
         e.preventDefault();
@@ -60,8 +58,7 @@ export default function HorizontalScrollWrapper({ children }: HorizontalScrollWr
           behavior: "smooth",
         });
       } else {
-        // Inside About (and future Projects if you add more sections)
-        if (e.deltaY < 0 && isAtTopOfAbout) {
+        if (e.deltaY < 0 && aboutSection.scrollTop <= 0) {
           // Scrolling up at top of About: move back to Home
           e.preventDefault();
           container.scrollBy({
@@ -69,22 +66,21 @@ export default function HorizontalScrollWrapper({ children }: HorizontalScrollWr
             behavior: "smooth",
           });
         }
-        // otherwise, normal scroll inside About
       }
     };
-  
-    // ✅ Correct: Event listeners are attached here
+
+    // Attach event listeners
     container.addEventListener("touchstart", handleTouchStart, { passive: false });
     container.addEventListener("touchmove", handleTouchMove, { passive: false });
     container.addEventListener("wheel", handleWheel, { passive: false });
-  
+
     return () => {
       container.removeEventListener("touchstart", handleTouchStart);
       container.removeEventListener("touchmove", handleTouchMove);
       container.removeEventListener("wheel", handleWheel);
     };
   }, []);
-  
+
   return (
     <div
       ref={containerRef}
